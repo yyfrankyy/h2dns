@@ -1,0 +1,27 @@
+{
+  "name": "dns-over-http2",
+  "version": "1.0.0",
+  "description": "DNS over Google's HTTP DNS",
+  "main": "index.js",
+  "scripts": {
+    "test": "npm test"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/yyfrankyy/dns-over-http2.git"
+  },
+  "keywords": [
+    "dns",
+    "http2"
+  ],
+  "author": "Frank Xu <yyfrankyy@gmail.com>",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/yyfrankyy/dns-over-http2/issues"
+  },
+  "homepage": "https://github.com/yyfrankyy/dns-over-http2#readme",
+  "dependencies": {
+    "dnsd": "^0.9.6",
+    "http2": "^3.3.6"
+  }
+}
