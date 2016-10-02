@@ -4,6 +4,8 @@ const request = require('request').defaults({
   agent: spdy.createAgent({
     host: 'dns.google.com',
     port: 443
+  }).once('error', (err) => {
+    this.emit(err);
   }),
   json: true
 });

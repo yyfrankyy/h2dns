@@ -1,11 +1,8 @@
 {
   "name": "dns-over-http2",
   "version": "1.0.0",
-  "description": "DNS over Google's HTTP DNS",
+  "description": "An UDP DNS Server over Google's HTTPS DNS API",
   "main": "index.js",
-  "scripts": {
-    "test": "npm test"
-  },
   "repository": {
     "type": "git",
     "url": "git://github.com/yyfrankyy/dns-over-http2.git"
@@ -22,6 +19,7 @@
   "homepage": "https://github.com/yyfrankyy/dns-over-http2#readme",
   "dependencies": {
     "dnsd": "^0.9.6",
-    "http2": "^3.3.6"
+    "request": "^2.75.0",
+    "spdy": "^3.4.3"
   }
 }
