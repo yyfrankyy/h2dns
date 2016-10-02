@@ -14,14 +14,12 @@ const RRTypes = require('./RRTypes').IntToString;
 const RRTypesByString = require('./RRTypes').StringToInt;
 
 const server = dnsd.createServer((req, res) => {
-  console.info(
-    '%s:%s/%s %j',
-    req.connection.remoteAddress, req.connection.remotePort,
-    req.connection.type, req
-  );
   let question = req.question[0], hostname = question.name;
+  let timeStamp = `[${req.id}/${req.connection.type}] ${req.opcode} ${hostname} ${question.class} ${question.type}`;
+  console.time(timeStamp);
   // TODO unsupported due to dnsd's broken implementation.
   if (question.type == 'AAAA') {
+    console.timeEnd(timeStamp);
     return res.end();
   }
   request({
@@ -45,6 +43,7 @@ const server = dnsd.createServer((req, res) => {
     } else if (err) {
       console.error('request error %s', err);
     }
+    console.timeEnd(timeStamp);
     res.end();
   });
 });
