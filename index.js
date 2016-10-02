@@ -5,7 +5,7 @@ const request = require('request').defaults({
     host: 'dns.google.com',
     port: 443
   }).once('error', (err) => {
-    this.emit(err);
+    console.error('agent error: %s', err);
   }),
   json: true
 });
@@ -43,7 +43,7 @@ const server = dnsd.createServer((req, res) => {
         return rec;
       });
     } else if (err) {
-      console.error(err);
+      console.error('request error %s', err);
     }
     res.end();
   });
