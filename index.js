@@ -13,15 +13,17 @@ const subnet = process.argv[2];
 const RRTypes = require('./RRTypes').IntToString;
 const RRTypesByString = require('./RRTypes').StringToInt;
 
-const dns = dnsd.createServer((req, res) => {
-  console.log(
+const server = dnsd.createServer((req, res) => {
+  console.info(
     '%s:%s/%s %j',
     req.connection.remoteAddress, req.connection.remotePort,
     req.connection.type, req
   );
   let question = req.question[0], hostname = question.name;
-  // TODO unsupported for now, due to dnsd's broken implementation.
-  if (question.type == 'AAAA') return res.end();
+  // TODO unsupported due to dnsd's broken implementation.
+  if (question.type == 'AAAA') {
+    return res.end();
+  }
   request({
     url: 'https://dns.google.com/resolve',
     qs: {
@@ -44,13 +46,11 @@ const dns = dnsd.createServer((req, res) => {
       console.error(err);
     }
     res.end();
-  }).on('error', err => {
-    console.error(err);
   });
 });
 
-dns.on('error', err => {
-  console.error(err);
+server.once('error', err => {
+  console.error('dnsd error: %s', err);
 });
 
-dns.listen(process.argv[3] || 5353, process.argv[4] || '127.0.0.1');
+server.listen(process.argv[3] || 6666, process.argv[4] || '127.0.0.1');
