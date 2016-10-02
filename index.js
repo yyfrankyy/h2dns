@@ -18,7 +18,7 @@ const server = dnsd.createServer((req, res) => {
   let timeStamp = `[${req.id}/${req.connection.type}] ${req.opcode} ${hostname} ${question.class} ${question.type}`;
   console.time(timeStamp);
   // TODO unsupported due to dnsd's broken implementation.
-  if (question.type == 'AAAA' || 'TLSA') {
+  if (question.type == 'AAAA'||question.type == 'TLSA') {
     console.timeEnd(timeStamp);
     return res.end();
   }
