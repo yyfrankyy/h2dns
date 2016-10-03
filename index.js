@@ -12,13 +12,14 @@ const request = require('request').defaults({
 const subnet = process.argv[2];
 const RRTypes = require('./RRTypes').IntToString;
 const RRTypesByString = require('./RRTypes').StringToInt;
+const SupportTypes = ['A', 'MX', 'CNAME', 'TXT'];
 
 const server = dnsd.createServer((req, res) => {
   let question = req.question[0], hostname = question.name;
   let timeStamp = `[${req.id}/${req.connection.type}] ${req.opcode} ${hostname} ${question.class} ${question.type}`;
   console.time(timeStamp);
   // TODO unsupported due to dnsd's broken implementation.
-  if (question.type == 'AAAA' || question.type == 'SOA') {
+  if (SupportTypes.indexOf(question.type) === -1) {
     console.timeEnd(timeStamp);
     return res.end();
   }
