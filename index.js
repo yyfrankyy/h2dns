@@ -1,3 +1,4 @@
+process.setMaxListeners(4096);
 const dnsd = require('dnsd');
 const spdy = require('spdy');
 const request = require('request').defaults({
