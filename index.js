@@ -13,7 +13,7 @@ const request = require('request').defaults({
 const subnet = process.argv[2];
 const RRTypes = require('./RRTypes').IntToString;
 const RRTypesByString = require('./RRTypes').StringToInt;
-const SupportTypes = ['A', 'MX', 'CNAME', 'TXT'];
+const SupportTypes = ['A', 'MX', 'CNAME', 'TXT', 'PTR'];
 
 const server = dnsd.createServer((req, res) => {
   let question = req.question[0], hostname = question.name;
