@@ -54,10 +54,10 @@ server.once('error', err => {
   console.error('dnsd error: %s', err);
 });
 
-const fs = require('fs');
+const devnull = require('dev-null');
 setInterval(() => {
   let ping = 'https://dns.google.com/resolve?name=www.google.com';
-  request(ping).pipe(fs.createWriteStream('/dev/null'));
+  request(ping).pipe(devnull());
 }, 60 * 1000)
 
 server.listen(process.argv[3] || 6666, process.argv[4] || '127.0.0.1');

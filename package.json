@@ -18,6 +18,7 @@
   },
   "homepage": "https://github.com/yyfrankyy/dns-over-http2#readme",
   "dependencies": {
+    "dev-null": "^0.1.1",
     "dnsd": "^0.9.6",
     "request": "^2.75.0",
     "spdy": "^3.4.3"
