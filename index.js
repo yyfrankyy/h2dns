@@ -1,5 +1,5 @@
 process.setMaxListeners(0);
-const dnsd = require('dnsd');
+const dnsd = require('./dnsd/named');
 const spdy = require('spdy');
 const request = require('request').defaults({
   agent: spdy.createAgent({
