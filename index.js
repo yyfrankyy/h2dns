@@ -36,10 +36,15 @@ const server = dnsd.createServer((req, res) => {
       res.answer = output.Answer.map(rec => {
         rec.ttl = rec.TTL;
         rec.type = RRTypes[rec.type];
-        if (rec.type == 'MX') {
-          rec.data = rec.data.split(/\s+/);
+        switch (rec.type) {
+          case 'MX':
+            rec.data = rec.data.split(/\s+/);
+            break;
+          case 'TXT':
+          case 'SPF':
+            rec.data = rec.data.replace(/^"|"$/g, '');
+            break;
         }
-        delete rec.TTL;
         return rec;
       });
     } else if (err) {
@@ -58,6 +63,6 @@ const devnull = require('dev-null');
 setInterval(() => {
   let ping = 'https://dns.google.com/resolve?name=www.google.com';
   request(ping).pipe(devnull());
-}, 60 * 1000)
+}, 60 * 1000);
 
 server.listen(process.argv[3] || 6666, process.argv[4] || '127.0.0.1');
