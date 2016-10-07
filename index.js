@@ -42,7 +42,7 @@ const server = dnsd.createServer((req, res) => {
             break;
           case 'TXT':
           case 'SPF':
-            rec.data = rec.data.replace(/^"|"$/g, '');
+            rec.data = rec.data.slice(1, -1);
             break;
         }
         return rec;

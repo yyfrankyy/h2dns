@@ -22,5 +22,8 @@
     "dev-null": "^0.1.1",
     "request": "^2.75.0",
     "spdy": "^3.4.3"
+  },
+  "devDependencies": {
+    "benchmark": "^2.1.1"
   }
 }
