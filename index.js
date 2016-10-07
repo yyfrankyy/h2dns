@@ -11,8 +11,7 @@ const request = require('request').defaults({
   json: true
 });
 const subnet = process.argv[2];
-const RRTypes = require('./RRTypes').IntToString;
-const RRTypesByString = require('./RRTypes').StringToInt;
+const Constants = require('./dnsd/constants');
 const SupportTypes = ['A', 'MX', 'CNAME', 'TXT', 'PTR'];
 
 const server = dnsd.createServer((req, res) => {
@@ -29,13 +28,13 @@ const server = dnsd.createServer((req, res) => {
     qs: {
       edns_client_subnet: subnet,
       name: hostname,
-      type: RRTypesByString[question.type]
+      type: Constants.type_to_number(question.type)
     }
   }, (err, response, output) => {
     if (output && output.Answer) {
       res.answer = output.Answer.map(rec => {
         rec.ttl = rec.TTL;
-        rec.type = RRTypes[rec.type];
+        rec.type = Constants.type_to_label(rec.type);
         switch (rec.type) {
           case 'MX':
             rec.data = rec.data.split(/\s+/);
