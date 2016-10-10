@@ -17,11 +17,11 @@
     "url": "https://github.com/yyfrankyy/dns-over-http2/issues"
   },
   "homepage": "https://github.com/yyfrankyy/dns-over-http2#readme",
-  "dependencies": {    
+  "dependencies": {
     "defaultable": "^0.7.2",
     "dev-null": "^0.1.1",
     "dnsd": "^0.9.6",
-    "ip6": "0.0.4",
+    "ip6": "^0.0.4",
     "randomstring": "^1.1.5",
     "request": "^2.75.0",    
     "spdy": "^3.4.3"
