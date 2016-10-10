@@ -69,8 +69,8 @@ const server = dnsd.createServer((req, res) => {
             break;
           case 'AAAA':
             // dnsd is expecting long IPVersion 6 format
-        	  rec.data = ip6.normalize(rec.data);
-        	  break;
+            rec.data = ip6.normalize(rec.data);
+            break;
         }
 
         return rec;
