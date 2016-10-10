@@ -1,37 +1,61 @@
 process.setMaxListeners(0);
+
 const dnsd = require('./dnsd/named');
 const spdy = require('spdy');
+const randomstring = require("randomstring");
+const forwardUrl = 'https://dns.google.com:443/resolve';
+const url = require('url'); 
+const resolver = url.parse(forwardUrl);
+
 const request = require('request').defaults({
   agent: spdy.createAgent({
-    host: 'dns.google.com',
-    port: 443
+    host: resolver.hostname,
+    port: resolver.port
   }).once('error', (err) => {
     console.error('agent error: %s', err);
   }),
   json: true
 });
-const subnet = process.argv[2];
 const Constants = require('./dnsd/constants');
-const SupportTypes = ['A', 'MX', 'CNAME', 'TXT', 'PTR'];
+const ip6 = require('ip6');
+
+const subnet = process.argv[2];
+const SupportTypes = ['A', 'MX', 'CNAME', 'TXT', 'PTR', 'AAAA'];
 
 const server = dnsd.createServer((req, res) => {
   let question = req.question[0], hostname = question.name;
   let timeStamp = `[${req.id}/${req.connection.type}] ${req.opcode} ${hostname} ${question.class} ${question.type}`;
   console.time(timeStamp);
+  
   // TODO unsupported due to dnsd's broken implementation.
   if (SupportTypes.indexOf(question.type) === -1) {
     console.timeEnd(timeStamp);
     return res.end();
   }
+  
+  // API clients concerned about possible side-channel privacy attacks
+  // using the packet sizes of HTTPS GET requests can use this to make all
+  // requests exactly the same size by padding requests with random data. 
+  let padding = randomstring.generate({
+    // maximum dnslength+NSEC3PARAM.length (longest possible Type now) 
+    // minus current To make always equal query lenght url
+    length: 263 - question.name.length - question.type.length,
+    // safe but can be more extended chars-_ 
+    charset: 'alphanumeric'
+  });
+  
+  let query = {
+    edns_client_subnet: subnet || '',
+    name: hostname,
+    type: Constants.type_to_number(question.type),
+    random_padding:   padding
+  }   
+
   request({
-    url: 'https://dns.google.com/resolve',
-    qs: {
-      edns_client_subnet: subnet,
-      name: hostname,
-      type: Constants.type_to_number(question.type)
-    }
-  }, (err, response, output) => {
-    if (output && output.Answer) {
+    url: forwardUrl,
+    qs: query
+  }, (err, response, output) => {    
+    if (output && output.Answer) {      
       res.answer = output.Answer.map(rec => {
         rec.ttl = rec.TTL;
         rec.type = Constants.type_to_label(rec.type);
@@ -43,7 +67,12 @@ const server = dnsd.createServer((req, res) => {
           case 'SPF':
             rec.data = rec.data.slice(1, -1);
             break;
+          case 'AAAA':
+            // dnsd is expecting long IPVersion 6 format
+            rec.data = ip6.normalize(rec.data);
+            break;
         }
+
         return rec;
       });
     } else if (err) {
@@ -60,7 +89,7 @@ server.once('error', err => {
 
 const devnull = require('dev-null');
 setInterval(() => {
-  let ping = 'https://dns.google.com/resolve?name=www.google.com';
+  let ping = forwardUrl + '?name=' + resolver.hostname;
   request(ping).pipe(devnull());
 }, 60 * 1000);
 
