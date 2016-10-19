@@ -1,5 +1,7 @@
 # DNS Over HTTP/2
 
+[![Coverity Scan Build Status](https://scan.coverity.com/projects/10575/badge.svg)](https://scan.coverity.com/projects/yyfrankyy-dns-over-http2)
+
 Inspired by [gdns-go](https://github.com/ayanamist/gdns-go), but do less, I'd
 like to keep it as simple as possible.
 
