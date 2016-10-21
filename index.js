@@ -56,7 +56,8 @@ const server = dnsd.createServer((req, res) => {
 
   request({
     url: forwardUrl,
-    qs: query
+    qs: query,
+		gzip: true
   }, (err, response, output) => {
     if (output && output.Answer) {
       res.answer = output.Answer.map(rec => {
