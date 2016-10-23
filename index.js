@@ -7,15 +7,72 @@ const forwardUrl = 'https://dns.google.com:443/resolve';
 const url = require('url');
 const resolver = url.parse(forwardUrl);
 
-const request = require('request').defaults({
-  agent: spdy.createAgent({
-    host: resolver.hostname,
-    port: resolver.port
-  }).once('error', (err) => {
-    console.error('agent error: %s', err);
-  }),
+const defaultOptions = {
   json: true
-});
+};
+
+class AgentPool {
+  constructor(max) {
+    let head = this.head = {
+      agent: this.createAgent()
+    }
+    for (let i = 0; i < max; i++) {
+      head.next = {
+        agent: this.createAgent(),
+        prev: head
+      }
+      head = head.next;
+    }
+    this.tail = head;
+    this.count = max;
+  }
+  aquire() {
+    this.count--;
+    if (this.tail) {
+      let tail = this.tail;
+      this.tail = tail.prev;
+      this.tail.next = null;
+      return tail.agent;
+    } else {
+      console.warn('Exceed pool maxSockets, creating a new Agent');
+      return this.createAgent();
+    }
+  }
+  release(agent) {
+    this.count--;
+    let node = {agent: agent};
+    if (this.tail) {
+      node.prev = this.tail;
+      this.tail = node;
+    }
+    this.head = this.tail = node;
+  }
+  createAgent() {
+    return spdy.createAgent({
+      host: resolver.hostname,
+      port: resolver.port
+    }).once('error', (err) => {
+      console.error('agent error: %s', err);
+    });
+  }
+  count() {
+    return this.count;
+  }
+}
+
+const agentPool = new AgentPool(10);
+
+const request = require('request').defaults(new Proxy(defaultOptions, {
+  get: (target, name) => {
+    if (name === 'agent') {
+      return agentPool.aquire();
+    }
+    return defaultOptions[name];
+  },
+  has: (target, name) => {
+    return name == 'target' || target.hasOwnProperty(name);
+  }
+}));
 const Constants = require('./dnsd/constants');
 const ip6 = require('ip6');
 
@@ -24,7 +81,8 @@ const SupportTypes = ['A', 'MX', 'CNAME', 'TXT', 'PTR', 'AAAA'];
 
 const server = dnsd.createServer((req, res) => {
   let question = req.question[0], hostname = question.name;
-  let timeStamp = `[${req.id}/${req.connection.type}] ${req.opcode} ${hostname} ${question.class} ${question.type}`;
+  let time = new Date().getTime();
+  const timeStamp = `[${time}${req.id}/${req.connection.type}] ${req.opcode} ${hostname} ${question.class} ${question.type}`;
   console.time(timeStamp);
 
   // TODO unsupported due to dnsd's broken implementation.
@@ -54,10 +112,12 @@ const server = dnsd.createServer((req, res) => {
     query.edns_client_subnet = subnet;
   }
 
-  request({
+  const http2Req = request({
     url: forwardUrl,
     qs: query
   }, (err, response, output) => {
+    agentPool.release(http2Req.agent);
+    console.timeEnd(timeStamp);
     if (output && output.Answer) {
       res.answer = output.Answer.map(rec => {
         rec.ttl = rec.TTL;
@@ -81,8 +141,10 @@ const server = dnsd.createServer((req, res) => {
     } else if (err) {
       console.error('request error %s', err);
     }
-    console.timeEnd(timeStamp);
     res.end();
+  });
+  http2Req.once('error', (err) => {
+    console.error('request error %s', err);
   });
 });
 
