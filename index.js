@@ -6,10 +6,18 @@ const randomstring = require("randomstring");
 const forwardUrl = 'https://dns.google.com:443/resolve';
 const url = require('url');
 const resolver = url.parse(forwardUrl);
+const option = require('commander')
+  .version('0.0.1')
+  .option('-i, --edns-client-subnet [subnet]', 'EDNS Client Subnet')
+  .option('-p, --port [6666]', 'Port to bind', 6666)
+  .option('-l, --listen [127.0.0.1]', 'Address to listen', '127.0.0.1')
+  .option('-t, --timeout [5000]', 'Default Http Request Timeout', 5000)
+  .parse(process.argv);
 
 const defaultOptions = {
   json: true,
-  timeout: 5000,
+  timeout: option.timeout,
+  gzip: true,
   agent: true, // a holder for proxy
 };
 
@@ -78,7 +86,7 @@ const request = require('request').defaults(new Proxy(defaultOptions, {
 const Constants = require('./dnsd/constants');
 const ip6 = require('ip6');
 
-const subnet = process.argv[2];
+const subnet = option['edns-client-subnet'];
 const SupportTypes = ['A', 'MX', 'CNAME', 'TXT', 'PTR', 'AAAA'];
 
 const server = dnsd.createServer((req, res) => {
@@ -160,4 +168,4 @@ setInterval(() => {
   request(ping).pipe(devnull());
 }, 60 * 1000);
 
-server.listen(process.argv[3] || 6666, process.argv[4] || '127.0.0.1');
+server.listen(option.port, option.address);
