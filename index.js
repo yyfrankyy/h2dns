@@ -8,7 +8,9 @@ const url = require('url');
 const resolver = url.parse(forwardUrl);
 
 const defaultOptions = {
-  json: true
+  json: true,
+  timeout: 5000,
+  agent: true, // a holder for proxy
 };
 
 class AgentPool {
@@ -16,7 +18,7 @@ class AgentPool {
     let head = this.head = {
       agent: this.createAgent()
     }
-    for (let i = 0; i < max; i++) {
+    for (let i = 0; i < max - 1; i++) {
       head.next = {
         agent: this.createAgent(),
         prev: head
@@ -25,6 +27,7 @@ class AgentPool {
     }
     this.tail = head;
     this.count = max;
+    this.max = max;
   }
   aquire() {
     this.count--;
@@ -39,13 +42,15 @@ class AgentPool {
     }
   }
   release(agent) {
-    this.count--;
+    this.count++;
     let node = {agent: agent};
     if (this.tail) {
       node.prev = this.tail;
+      node.prev.next = node;
       this.tail = node;
+    } else {
+      this.head = this.tail = node;
     }
-    this.head = this.tail = node;
   }
   createAgent() {
     return spdy.createAgent({
@@ -68,9 +73,6 @@ const request = require('request').defaults(new Proxy(defaultOptions, {
       return agentPool.aquire();
     }
     return defaultOptions[name];
-  },
-  has: (target, name) => {
-    return name == 'target' || target.hasOwnProperty(name);
   }
 }));
 const Constants = require('./dnsd/constants');
@@ -82,7 +84,7 @@ const SupportTypes = ['A', 'MX', 'CNAME', 'TXT', 'PTR', 'AAAA'];
 const server = dnsd.createServer((req, res) => {
   let question = req.question[0], hostname = question.name;
   let time = new Date().getTime();
-  const timeStamp = `[${time}${req.id}/${req.connection.type}] ${req.opcode} ${hostname} ${question.class} ${question.type}`;
+  const timeStamp = `[${time}/${req.id}/${req.connection.type}] ${req.opcode} ${hostname} ${question.class} ${question.type}`;
   console.time(timeStamp);
 
   // TODO unsupported due to dnsd's broken implementation.
@@ -114,8 +116,7 @@ const server = dnsd.createServer((req, res) => {
 
   const http2Req = request({
     url: forwardUrl,
-    qs: query,
-    gzip: true
+    qs: query
   }, (err, response, output) => {
     agentPool.release(http2Req.agent);
     console.timeEnd(timeStamp);
@@ -144,12 +145,12 @@ const server = dnsd.createServer((req, res) => {
     }
     res.end();
   });
-  http2Req.once('error', (err) => {
+  http2Req.on('error', (err) => {
     console.error('request error %s', err);
   });
 });
 
-server.once('error', err => {
+server.on('error', err => {
   console.error('dnsd error: %s', err);
 });
 
