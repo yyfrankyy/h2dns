@@ -21,26 +21,19 @@ const defaultOptions = {
 
 class AgentPool {
   constructor(max) {
-    let head = this.head = {
-      agent: this.createAgent()
-    }
-    for (let i = 0; i < max - 1; i++) {
-      head.next = {
-        agent: this.createAgent(),
-        prev: head
-      }
-      head = head.next;
-    }
-    this.tail = head;
-    this.count = max;
+    this.count = 0;
     this.max = max;
   }
   aquire() {
-    this.count--;
     if (this.tail) {
+      this.count--;
       let tail = this.tail;
       this.tail = tail.prev;
-      this.tail.next = null;
+      if (this.tail) this.tail.next = null;
+      if (tail.agent._spdyState.connection._spdyState.goaway) {
+        console.warn('agent is marked as goaway, drop it.');
+        return aquire();
+      }
       return tail.agent;
     } else {
       console.warn('Exceed pool maxSockets, creating a new Agent');
@@ -48,6 +41,7 @@ class AgentPool {
     }
   }
   release(agent) {
+    if (this.count >= this.max) return;
     this.count++;
     let node = {agent: agent};
     if (this.tail) {
@@ -62,8 +56,8 @@ class AgentPool {
     return spdy.createAgent({
       host: resolver.hostname,
       port: resolver.port
-    }).once('error', (err) => {
-      console.error('agent error: %s', err);
+    }).on('error', (err) => {
+      console.error(err);
     });
   }
   count() {
