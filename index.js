@@ -7,7 +7,7 @@ const forwardUrl = 'https://dns.google.com:443/resolve';
 const url = require('url');
 const resolver = url.parse(forwardUrl);
 const option = require('commander')
-  .version('0.0.1')
+  .version(require('./package.json').version)
   .option('-i, --edns-client-subnet [subnet]', 'EDNS Client Subnet')
   .option('-p, --port [6666]', 'Port to bind', 6666)
   .option('-l, --listen [127.0.0.1]', 'Address to listen', '127.0.0.1')
