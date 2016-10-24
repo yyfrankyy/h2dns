@@ -114,7 +114,8 @@ const server = dnsd.createServer((req, res) => {
 
   const http2Req = request({
     url: forwardUrl,
-    qs: query
+    qs: query,
+    gzip: true
   }, (err, response, output) => {
     agentPool.release(http2Req.agent);
     console.timeEnd(timeStamp);
