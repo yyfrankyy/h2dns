@@ -1,5 +1,3 @@
-process.setMaxListeners(0);
-
 const dnsd = require('./dnsd/named');
 const spdy = require('spdy');
 const randomstring = require("randomstring");
