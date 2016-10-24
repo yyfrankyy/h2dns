@@ -12,7 +12,7 @@ const option = require('commander')
   .option('-t, --timeout [5000]', 'Default Http Request Timeout', 5000)
   .option('-c, --pool [2]', 'Concurrent Connections of Pool Size ', 2)
   .parse(process.argv);
-if(option.pool<1)option.pool+=1;//No Zero Poolsize
+if(option.pool<1)option.pool++;//No Zero Poolsize
 const defaultOptions = {
   json: true,
   timeout: option.timeout,
