@@ -10,6 +10,7 @@ const option = require('commander')
   .option('-p, --port [6666]', 'Port to bind', 6666)
   .option('-l, --listen [127.0.0.1]', 'Address to listen', '127.0.0.1')
   .option('-t, --timeout [5000]', 'Default Http Request Timeout', 5000)
+  .option('-p, --pool [2]', 'Default Http Request Timeout', 2)
   .parse(process.argv);
 
 const defaultOptions = {
@@ -65,7 +66,7 @@ class AgentPool {
   }
 }
 
-const agentPool = new AgentPool(10);
+const agentPool = new AgentPool(2);
 
 const request = require('request').defaults(new Proxy(defaultOptions, {
   get: (target, name) => {
