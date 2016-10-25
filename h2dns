@@ -87,7 +87,7 @@ const Constants = require('./dnsd/constants');
 const ip6 = require('ip6');
 
 const subnet = option.ednsClientSubnet;
-const SupportTypes = ['A', 'MX', 'CNAME', 'TXT', 'PTR', 'AAAA', 'NS', 'SOA', 'DS'];
+const SupportTypes = ['A', 'MX', 'CNAME', 'TXT', 'PTR', 'AAAA', 'NS', 'SOA', 'SRV', 'DS'];
 
 const server = dnsd.createServer((req, res) => {
   let question = req.question[0], hostname = question.name;
@@ -163,6 +163,15 @@ const server = dnsd.createServer((req, res) => {
               , 'ttl'    : rec.data[6]
             }
             break;
+          case 'SRV':
+          	rec.data=rec.data.split(/\s+/);
+          	rec.data= { 
+          		'priority': rec.data[0]
+                , 'weight': rec.data[1]
+                , 'port': rec.data[2]
+                , 'target': rec.data[3]
+              }
+              break;
           case 'DS':
           	rec.data=rec.data.split(/\s+/);
           	rec.data= { 
