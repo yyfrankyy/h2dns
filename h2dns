@@ -87,7 +87,7 @@ const Constants = require('./dnsd/constants');
 const ip6 = require('ip6');
 
 const subnet = option.ednsClientSubnet;
-const SupportTypes = ['A', 'MX', 'CNAME', 'TXT', 'PTR', 'AAAA', 'NS', 'SOA'];
+const SupportTypes = ['A', 'MX', 'CNAME', 'TXT', 'PTR', 'AAAA', 'NS', 'SOA', 'DS'];
 
 const server = dnsd.createServer((req, res) => {
   let question = req.question[0], hostname = question.name;
@@ -152,8 +152,8 @@ const server = dnsd.createServer((req, res) => {
             rec.data = ip6.normalize(rec.data);
             break;
           case 'SOA':
-        	  rec.data=rec.data.split(/\s+/);
-        	  rec.data= { 
+        	rec.data=rec.data.split(/\s+/);
+        	rec.data= { 
         		'mname': rec.data[0]
               , 'rname': rec.data[1]
               , 'serial': rec.data[2]
@@ -161,10 +161,18 @@ const server = dnsd.createServer((req, res) => {
               , 'retry'  : rec.data[4]
               , 'expire' : rec.data[5]
               , 'ttl'    : rec.data[6]
-              }
+            }
             break;
+          case 'DS':
+          	rec.data=rec.data.split(/\s+/);
+          	rec.data= { 
+          		'key_tag': rec.data[0]
+                , 'algorithm': rec.data[1]
+                , 'digest_type': rec.data[2]
+                , 'digest': rec.data[3]
+              }
+              break;        	
         }
-
         return rec;
       });
     } else if (err) {
