@@ -39,8 +39,6 @@ function final_response(res, value) {
     , authorities = res.authority  || []
     , additionals = res.additional || []
 
-  res.recursion_available = false
-
   // Find the zone of authority for this record, if any.
   var question = questions[0]
     , names = question && question.name && question.name.split(/\./)

@@ -124,6 +124,8 @@ const server = dnsd.createServer((req, res) => {
     agentPool.release(http2Req.agent);
     console.timeEnd(timeStamp);
     if (output && output.Answer) {
+      res.recursion_available = output.RA;
+      res.recursion_desired = output.RD;
       res.answer = output.Answer.map(rec => {
         rec.ttl = rec.TTL;
         rec.type = Constants.type_to_label(rec.type);
