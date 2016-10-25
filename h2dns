@@ -87,7 +87,7 @@ const Constants = require('./dnsd/constants');
 const ip6 = require('ip6');
 
 const subnet = option.ednsClientSubnet;
-const SupportTypes = ['A', 'MX', 'CNAME', 'TXT', 'PTR', 'AAAA'];
+const SupportTypes = ['A', 'MX', 'CNAME', 'TXT', 'PTR', 'AAAA', 'NS'];
 
 const server = dnsd.createServer((req, res) => {
   let question = req.question[0], hostname = question.name;
@@ -167,7 +167,6 @@ server.on('error', err => {
 
 const devnull = require('dev-null');
 setInterval(() => {
-  let ping = forwardUrl + '?name=' + resolver.hostname;
   const req = request({
     url: forwardUrl,
     qs: { name: resolver.hostname }
