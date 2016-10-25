@@ -10,7 +10,8 @@ const option = require('commander')
   .option('-p, --port [6666]', 'Port to bind', 6666)
   .option('-l, --listen [127.0.0.1]', 'Address to listen', '127.0.0.1')
   .option('-t, --timeout [5000]', 'Default Http2 Request Timeout', 5000)
-  .option('-c, --pool [2]', 'Concurrent Connections of Pool Size ', val => Math.max(1, val), 2)
+  .option('-c, --pool [2]',
+    'Concurrent Connections of Pool Size ', val => Math.max(1, val), 2)
   .parse(process.argv);
 
 const defaultOptions = {
@@ -33,7 +34,7 @@ class AgentPool {
       if (this.tail) this.tail.next = null;
       if (tail.agent._spdyState.connection._spdyState.goaway) {
         console.warn('agent is marked as goaway, drop it.');
-        return aquire();
+        return this.aquire();
       }
       return tail.agent;
     } else {
@@ -85,7 +86,8 @@ const SupportTypes = ['A', 'MX', 'CNAME', 'TXT', 'PTR', 'AAAA'];
 const server = dnsd.createServer((req, res) => {
   let question = req.question[0], hostname = question.name;
   let time = new Date().getTime();
-  const timeStamp = `[${time}/${req.id}/${req.connection.type}] ${req.opcode} ${hostname} ${question.class} ${question.type}`;
+  const timeStamp = `[${time}/${req.id}/${req.connection.type}]\
+  ${req.opcode} ${hostname} ${question.class} ${question.type}`;
   console.time(timeStamp);
 
   // TODO unsupported due to dnsd's broken implementation.
@@ -146,7 +148,7 @@ const server = dnsd.createServer((req, res) => {
     }
     res.end();
   });
-  http2Req.on('error', (err) => {
+  http2Req.on('error', err => {
     console.error('request error %s', err);
   });
 });
@@ -158,7 +160,15 @@ server.on('error', err => {
 const devnull = require('dev-null');
 setInterval(() => {
   let ping = forwardUrl + '?name=' + resolver.hostname;
-  request(ping).pipe(devnull());
-}, 60 * 1000);
+  const req = request({
+    url: forwardUrl,
+    qs: { name: resolver.hostname }
+  }, () => {
+    agentPool.release(req.agent);
+  });
+  req.on('error', err => {
+    console.error('ping error %s', err);
+  }).pipe(devnull());
+}, 1000);
 
 server.listen(option.port, option.address);
