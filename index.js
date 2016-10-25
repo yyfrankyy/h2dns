@@ -9,10 +9,10 @@ const option = require('commander')
   .option('-i, --edns-client-subnet [subnet]', 'EDNS Client Subnet')
   .option('-p, --port [6666]', 'Port to bind', 6666)
   .option('-l, --listen [127.0.0.1]', 'Address to listen', '127.0.0.1')
-  .option('-t, --timeout [5000]', 'Default Http Request Timeout', 5000)
-  .option('-c, --pool [2]', 'Concurrent Connections of Pool Size ', 2)
+  .option('-t, --timeout [5000]', 'Default Http2 Request Timeout', 5000)
+  .option('-c, --pool [2]', 'Concurrent Connections of Pool Size ', val => Math.max(1, val), 2)
   .parse(process.argv);
-if(option.pool<1)option.pool++;//No Zero Poolsize
+
 const defaultOptions = {
   json: true,
   timeout: option.timeout,
