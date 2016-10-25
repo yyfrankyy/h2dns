@@ -2,6 +2,33 @@
 
 [![Coverity Scan Build Status](https://scan.coverity.com/projects/10575/badge.svg)](https://scan.coverity.com/projects/yyfrankyy-dns-over-http2)
 
+A DNS Server over Google's HTTPS DNS API in HTTP/2 Protocol.
+
+### QuickStart
+
+```
+npm i h2dns -g
+```
+
+```
+$ h2dns -h
+
+  Usage: h2dns [options]
+
+  Options:
+
+    -h, --help                         output usage information
+    -V, --version                      output the version number
+    -i, --edns-client-subnet [subnet]  EDNS Client Subnet
+    -p, --port [6666]                  Port to bind
+    -l, --listen [127.0.0.1]           Address to listen
+    -t, --timeout [5000]               Default Http2 Request Timeout
+    -c, --pool [2]                     Concurrent Connections of Pool Size
+    --ping-interval [60000]            Interval of ping to keep connection alive.
+```
+
+### Tips
+
 Inspired by [gdns-go](https://github.com/ayanamist/gdns-go), but do less, I'd
 like to keep it as simple as possible.
 
@@ -11,35 +38,3 @@ So,
  or [unbound](http://unbound.net/) as frontend.
 2. No proxy. setup your proxy globally, the script will simply honor it.
 3. Less config. if your public ip is changed, restart the script.
-
-Last but not least, long live process, I prefer [pm2](http://pm2.keymetrics.io).
-
-Write a [process file](http://pm2.keymetrics.io/docs/usage/application-declaration/)
-with your customized setup (say `dns-over-http2.json`):
-
-```
-{
-  "apps" : [{
-    "name"        : "dns-over-http2",
-    "script"      : "/path/to/your/dns-over-http2/index.js",
-    "args"        : ["your public ip", 6666, "127.0.0.1"],
-    "env": {
-        "NODE_ENV": "production"
-    }
-  }]
-}
-```
-
-Simply start it as follow:
-
-```
-pm2 start dns-over-http2.json
-```
-
-All set, test it with dig:
-
-```
-$ dig @127.0.0.1 -p 6666 github.com A +short
-github.com.
-192.30.253.112
-```

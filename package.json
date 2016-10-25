@@ -1,11 +1,11 @@
 {
-  "name": "dns-over-http2",
+  "name": "h2dns",
   "version": "1.0.0",
-  "description": "An UDP DNS Server over Google's HTTPS DNS API",
-  "main": "index.js",
+  "description": "A DNS Server over Google's HTTPS DNS API in HTTP/2 Protocol",
+  "bin": "h2dns",
   "repository": {
     "type": "git",
-    "url": "git://github.com/yyfrankyy/dns-over-http2.git"
+    "url": "git://github.com/yyfrankyy/h2dns.git"
   },
   "keywords": [
     "dns",
@@ -14,9 +14,9 @@
   "author": "Frank Xu <yyfrankyy@gmail.com>",
   "license": "ISC",
   "bugs": {
-    "url": "https://github.com/yyfrankyy/dns-over-http2/issues"
+    "url": "https://github.com/yyfrankyy/h2dns/issues"
   },
-  "homepage": "https://github.com/yyfrankyy/dns-over-http2#readme",
+  "homepage": "https://github.com/yyfrankyy/h2dns#readme",
   "dependencies": {
     "commander": "^2.9.0",
     "defaultable": "^0.7.2",

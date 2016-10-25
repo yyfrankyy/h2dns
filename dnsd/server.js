@@ -32,7 +32,7 @@ function Server (handler) {
   if(handler)
     self.on('request', handler)
 
-  self.udp = dgram.createSocket('udp4')
+  self.udp = dgram.createSocket({type: 'udp4', reuseAddr: true})
   self.tcp = net.createServer()
 
   self.udp.on('close', function() { self.close() })
