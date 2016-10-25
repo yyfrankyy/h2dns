@@ -11,7 +11,11 @@ const option = require('commander')
   .option('-l, --listen [127.0.0.1]', 'Address to listen', '127.0.0.1')
   .option('-t, --timeout [5000]', 'Default Http2 Request Timeout', 5000)
   .option('-c, --pool [2]',
-    'Concurrent Connections of Pool Size ', val => Math.max(1, val), 2)
+    'Concurrent Connections of Pool Size ',
+     val => Math.max(1, val), 2)
+  .option('--ping-interval [60000]',
+    'Interval of ping to keep connection alive.',
+     val => Math.max(500, val), 60000) // at least 500ms?
   .parse(process.argv);
 
 const defaultOptions = {
@@ -80,7 +84,7 @@ const request = require('request').defaults(new Proxy(defaultOptions, {
 const Constants = require('./dnsd/constants');
 const ip6 = require('ip6');
 
-const subnet = option['edns-client-subnet'];
+const subnet = option.ednsClientSubnet;
 const SupportTypes = ['A', 'MX', 'CNAME', 'TXT', 'PTR', 'AAAA'];
 
 const server = dnsd.createServer((req, res) => {
@@ -171,6 +175,6 @@ setInterval(() => {
   req.on('error', err => {
     console.error('ping error %s', err);
   }).pipe(devnull());
-}, 1000);
+}, option.pingInterval);
 
 server.listen(option.port, option.address);
