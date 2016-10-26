@@ -87,7 +87,10 @@ const Constants = require('./dnsd/constants');
 const ip6 = require('ip6');
 
 const subnet = option.ednsClientSubnet;
-const SupportTypes = ['A', 'MX', 'CNAME', 'TXT', 'PTR', 'AAAA', 'NS'];
+const SupportTypes = [
+  'A', 'MX', 'CNAME', 'TXT', 'PTR',
+  'AAAA', 'NS', 'SOA', 'SRV', 'DS'
+];
 
 const server = dnsd.createServer((req, res) => {
   let question = req.question[0], hostname = question.name;
@@ -102,27 +105,29 @@ const server = dnsd.createServer((req, res) => {
     return res.end();
   }
 
-  // API clients concerned about possible side-channel privacy attacks
-  // using the packet sizes of HTTPS GET requests can use this to make all
-  // requests exactly the same size by padding requests with random data.
-  let padding = randomstring.generate({
-    // maximum dnslength+NSEC3PARAM.length (longest possible Type now)
-    // minus current To make always equal query lenght url
-    length: 263 - question.name.length - question.type.length,
-    // safe but can be more extended chars-_
-    charset: 'alphanumeric'
-  });
+  let query = { name: hostname }
+  let type = Constants.type_to_number(question.type);
 
-  let query = {
-    name: hostname,
-    type: Constants.type_to_number(question.type),
-    random_padding: padding
+  if (question.type != 'A') {
+    query.type = type; // Type defaults 1
+    // API clients concerned about possible side-channel privacy attacks
+    // using the packet sizes of HTTPS GET requests can use this to make all
+    // requests exactly the same size by padding requests with random data.
+    query.random_padding= randomstring.generate({ // 253 maximum dnslength
+      // +'&type=type'.length minus current Name for equal query length url
+      length: 253 - question.name.length - type.toString().length,
+      charset: 'alphanumeric' // safe but can be more extended chars-_
+    });
+  } else {
+    query.random_padding= randomstring.generate({
+      length: 259 - question.name.length,
+      charset: 'alphanumeric'
+    });
   }
 
   if (subnet) {
     query.edns_client_subnet = subnet;
   }
-
   const http2Req = request({
     url: forwardUrl,
     qs: query
@@ -147,8 +152,22 @@ const server = dnsd.createServer((req, res) => {
             // dnsd is expecting long IPVersion 6 format
             rec.data = ip6.normalize(rec.data);
             break;
+          case 'SOA':
+            rec.data = arr2map(rec.data.split(/\s+/), [
+              'mname', 'rname', 'serial', 'refresh', 'retry', 'expire', 'ttl'
+            ]);
+            break;
+          case 'SRV':
+            rec.data = arr2map(rec.data.split(/\s+/), [
+              'priority', 'weight', 'port', 'target'
+            ]);
+            break;
+          case 'DS':
+            rec.data = arr2map(rec.data.split(/\s+/), [
+              'key_tag', 'algorithm', 'digest_type', 'digest'
+            ]);
+            break;
         }
-
         return rec;
       });
     } else if (err) {
@@ -160,6 +179,11 @@ const server = dnsd.createServer((req, res) => {
     console.error('request error %s', err);
   });
 });
+
+function arr2map(arr, keys, data = {}) {
+  keys.forEach((key, idx) => data[key] = arr[idx]);
+  return data;
+}
 
 server.on('error', err => {
   console.error('dnsd error: %s', err);
