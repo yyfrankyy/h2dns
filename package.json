@@ -19,6 +19,7 @@
   "homepage": "https://github.com/yyfrankyy/h2dns#readme",
   "dependencies": {
     "commander": "^2.9.0",
+    "debug": "^2.2.0",
     "defaultable": "^0.7.2",
     "dev-null": "^0.1.1",
     "dnsd": "^0.9.6",
@@ -28,6 +29,7 @@
     "spdy": "^3.4.3"
   },
   "devDependencies": {
-    "benchmark": "^2.1.1"
+    "benchmark": "^2.1.1",
+    "longjohn": "^0.2.11"
   }
 }

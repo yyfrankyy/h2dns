@@ -1,5 +1,10 @@
 #!/usr/bin/env node
 
+if (process.env.NODE_ENV !== 'production'){
+  require('longjohn');
+}
+
+const debug = require('debug')('h2dns');
 const dnsd = require('./dnsd/named');
 const spdy = require('spdy');
 const randomstring = require("randomstring");
@@ -39,12 +44,12 @@ class AgentPool {
       this.tail = tail.prev;
       if (this.tail) this.tail.next = null;
       if (tail.agent._spdyState.connection._spdyState.goaway) {
-        console.warn('agent is marked as goaway, drop it.');
+        debug('agent is marked as goaway, drop it.');
         return this.aquire();
       }
       return tail.agent;
     } else {
-      console.warn('Exceed pool maxSockets, creating a new Agent');
+      debug('Exceed pool maxSockets, creating a new Agent');
       return this.createAgent();
     }
   }
@@ -61,12 +66,14 @@ class AgentPool {
     }
   }
   createAgent() {
-    return spdy.createAgent({
+    const agent = spdy.createAgent({
       host: resolver.hostname,
       port: resolver.port
-    }).on('error', (err) => {
-      console.error(err);
     });
+    agent.on('error', err => {
+      debug('agent error', err);
+    });
+    return agent;
   }
   count() {
     return this.count;
@@ -171,12 +178,12 @@ const server = dnsd.createServer((req, res) => {
         return rec;
       });
     } else if (err) {
-      console.error('request error %s', err);
+      debug('request error', err);
     }
     res.end();
   });
   http2Req.on('error', err => {
-    console.error('request error %s', err);
+    debug('request error', err);
   });
 });
 
@@ -186,7 +193,7 @@ function arr2map(arr, keys, data = {}) {
 }
 
 server.on('error', err => {
-  console.error('dnsd error: %s', err);
+  debug('dnsd error', err);
 });
 
 const devnull = require('dev-null');
@@ -198,7 +205,7 @@ setInterval(() => {
     agentPool.release(req.agent);
   });
   req.on('error', err => {
-    console.error('ping error %s', err);
+    debug('ping error', err);
   }).pipe(devnull());
 }, option.pingInterval);
 
