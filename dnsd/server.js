@@ -30,7 +30,13 @@ function Server (handler) {
   self.zones = {}
 
   if(handler)
-    self.on('request', handler)
+    self.on('request', (req, res) => {
+      try {
+        handler(req, res)
+      } catch(err) {
+        self.emit('error', err);
+      }
+    })
 
   self.udp = dgram.createSocket({type: 'udp4', reuseAddr: true})
   self.tcp = net.createServer()
@@ -168,14 +174,10 @@ Server.prototype.on_udp = function(data, rinfo) {
                    , 'end'          : function() {}
                    }
 
-  try {
-    var req = new Request(data, connection)
-      , res = new Response(data, connection)
+  var req = new Request(data, connection)
+    , res = new Response(data, connection)
 
-    self.emit('request', req, res)
-  } catch (err) {
-    self.emit('error', 'Error processing request', err, connection)
-  }
+  self.emit('request', req, res);
 }
 
 util.inherits(Request, Message)
