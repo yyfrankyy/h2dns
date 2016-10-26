@@ -73,6 +73,14 @@ class AgentPool {
     agent.on('error', err => {
       debug('agent error', err);
     });
+    agent.once('_connect', () => {
+      let connection = agent._spdyState.connection;
+      if (connection != null) {
+        connection.on('error', err => {
+          debug('connection error', err);
+        });
+      }
+    });
     return agent;
   }
   count() {
