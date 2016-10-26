@@ -64,6 +64,7 @@ const server = dnsd.createServer((req, res) => {
   // TODO unsupported due to dnsd's broken implementation.
   if (SupportTypes.indexOf(question.type) === -1) {
     console.timeEnd(timeStamp);
+    res.responseCode=2;//SERVFAIL Server failed to complete the DNS request
     return res.end();
   }
 
