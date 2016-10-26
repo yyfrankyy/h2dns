@@ -38,7 +38,8 @@ class AgentPool {
   createAgent() {
     const agent = spdy.createAgent({
       host: this.resolver.hostname,
-      port: this.resolver.port
+      port: this.resolver.port,
+      family: this.resolver.family
     });
     agent.on('error', err => {
       debug('agent error', err);
