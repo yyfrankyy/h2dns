@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 if (process.env.NODE_ENV !== 'production'){
-  require('longjohn');
+  try { require('longjohn'); } catch (e) {}
 }
 
 const debug = require('debug')('h2dns:server');
