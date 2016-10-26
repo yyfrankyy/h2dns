@@ -26,6 +26,7 @@ const option = require('commander')
   .option('--ping-interval [60000]',
     'Interval of ping to keep connection alive.',
      val => Math.max(500, val), 60000) // at least 500ms?
+  .option('-v, --IPv [6]', 'Force Resolver Internet Protocol Version priority', 0)//4||6;Zero respects OS decision
   .parse(process.argv);
 
 const defaultOptions = {
@@ -34,7 +35,7 @@ const defaultOptions = {
   gzip: true,
   agent: true, // a holder for proxy
 };
-
+resolver.family=parseInt(option.IPv);
 const agentPool = require('./pool')(resolver, option.pool);
 
 const request = require('request').defaults(new Proxy(defaultOptions, {
