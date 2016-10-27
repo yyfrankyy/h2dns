@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+'use strict';
 
 if (process.env.NODE_ENV !== 'production'){
   try { require('longjohn'); } catch (e) {} }
@@ -62,10 +63,9 @@ const SupportTypes = [
 const server = dnsd.createServer((req, res) => {
   const question = req.question[0], hostname = question.name;
   const time = new Date().getTime();
+  const tag = `[${pad(5, req.id)}/${pad(4, req.connection.type, ' ')}]`;
   const timeStamp = [
-    `[${pad(5, req.id)}/${pad(4, req.connection.type, ' ')}]`,
-    req.opcode, hostname, question.class, question.type
-  ].join(' ');
+    tag, req.opcode, hostname, question.class, question.type].join(' ');
 
   // TODO unsupported due to dnsd's broken implementation.
   if (SupportTypes.indexOf(question.type) === -1) {
@@ -110,7 +110,7 @@ const server = dnsd.createServer((req, res) => {
       qs: query
     }, (err, response, output) => {
       if (operation.retry(err)) {
-        debug(`retrying ${operation.attempts()}/${option.retries}`);
+        debug(`${tag} retrying ${operation.attempts()}/${option.retries}`);
         return;
       }
       if (err) {
