@@ -1,8 +1,7 @@
 #!/usr/bin/env node
 
 if (process.env.NODE_ENV !== 'production'){
-  try { require('longjohn'); } catch (e) {}
-}
+  try { require('longjohn'); } catch (e) {} }
 
 const debug = require('debug')('h2dns:server');
 const dnsd = require('./dnsd/named');
@@ -158,12 +157,12 @@ const server = dnsd.createServer((req, res) => {
         });
       } else if (err) {
         res.responseCode = 2;
-        // debug('request error', err);
+        debug('request error', err);
       }
       res.end();
     });
     http2Req.on('error', err => {
-      // debug('request error', err);
+      debug('request error', err);
     });
   });
 });
