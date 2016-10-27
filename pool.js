@@ -19,7 +19,7 @@ class AgentPool {
       }
       return tail.agent;
     } else {
-      debug('Exceed pool maxSockets, creating a new Agent');
+      debug('no agent left in the pool, creating a new one');
       return this.createAgent();
     }
   }

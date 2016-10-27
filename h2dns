@@ -13,21 +13,16 @@ const option = require('commander')
   .option('-i, --edns-client-subnet [subnet]', 'EDNS Client Subnet')
   .option('-p, --port [6666]', 'Port to bind', val => parseInt(val), 6666)
   .option('-l, --listen [127.0.0.1]', 'Address to listen', '127.0.0.1')
-  .option('-t, --timeout [5000]',
-    'Default Http2 Request Timeout',
+  .option('-t, --timeout [5000]', 'Default Http2 Request Timeout',
      val => parseInt(val), 5000)
-  .option('-c, --pool [2]',
-    'Concurrent Connections of Pool Size ',
+  .option('-c, --pool [2]', 'Concurrent Connections of Pool Size',
      val => Math.max(1, val), 2)
-  .option('--ping-interval [60000]',
-    'Interval of ping to keep connection alive.',
+  .option('--ping-interval [60000]', 'Interval of ping to keepAlive.',
      val => Math.max(500, parseInt(val)), 60000) // at least 500ms?
   .option('-v, --family [4|6]',
     'Force Resolver Internet Protocol Version priority',
-    val => parseInt(val), 0)
+     val => parseInt(val), 0)
   .parse(process.argv);
-
-console.log(option.timeout)
 
 const defaultOptions = {
   json: true,
@@ -61,15 +56,16 @@ const SupportTypes = [
 ];
 
 const server = dnsd.createServer((req, res) => {
-  let question = req.question[0], hostname = question.name;
-  let time = new Date().getTime();
-  const timeStamp = `[${time}/${req.id}/${req.connection.type}]\
-  ${req.opcode} ${hostname} ${question.class} ${question.type}`;
-  console.time(timeStamp);
+  const question = req.question[0], hostname = question.name;
+  const time = new Date().getTime();
+  const timeStamp = [
+    `[${pad(5, req.id)}/${pad(4, req.connection.type, ' ')}]`,
+    req.opcode, hostname, question.class, question.type
+  ].join(' ');
 
   // TODO unsupported due to dnsd's broken implementation.
   if (SupportTypes.indexOf(question.type) === -1) {
-    console.timeEnd(timeStamp);
+    debug(timeStamp + ` +${new Date().getTime() - time}ms`);
     res.responseCode = 2;
     return res.end();
   }
@@ -102,7 +98,7 @@ const server = dnsd.createServer((req, res) => {
     qs: query
   }, (err, response, output) => {
     if (!err) agentPool.release(http2Req.agent);
-    console.timeEnd(timeStamp);
+    debug(timeStamp + ` +${new Date().getTime() - time}ms`);
     if (output && output.Answer) {
       res.recursion_available = output.RA;
       res.recursion_desired = output.RD;
@@ -155,6 +151,10 @@ function arr2map(arr, keys, data = {}) {
   return data;
 }
 
+function pad(n, m, holder = '0') {
+  return String(Array(n + 1).join(holder) + m).slice(-n);
+}
+
 const devnull = require('dev-null');
 setInterval(() => {
   const req = request({
@@ -168,4 +168,6 @@ setInterval(() => {
   }).pipe(devnull());
 }, option.pingInterval);
 
-server.listen(option.port, option.address);
+server.listen(option.port, option.address, () => {
+  debug(`start listening to ${option.address || ''}:${option.port}.`)
+});
