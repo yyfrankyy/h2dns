@@ -5,27 +5,26 @@ if (process.env.NODE_ENV !== 'production'){
 }
 
 const debug = require('debug')('h2dns:server');
-
 const dnsd = require('./dnsd/named');
-
-const forwardUrl = 'https://dns.google.com:443/resolve';
-const url = require('url');
-const resolver = url.parse(forwardUrl);
-
 const randomstring = require("randomstring");
 
 const option = require('commander')
   .version(require('./package.json').version)
   .option('-i, --edns-client-subnet [subnet]', 'EDNS Client Subnet')
-  .option('-p, --port [6666]', 'Port to bind', 6666)
+  .option('-p, --port [6666]', 'Port to bind', parseInt, 6666)
   .option('-l, --listen [127.0.0.1]', 'Address to listen', '127.0.0.1')
-  .option('-t, --timeout [5000]', 'Default Http2 Request Timeout', 5000)
+  .option('-t, --timeout [5000]',
+    'Default Http2 Request Timeout',
+     parseInt, 5000)
   .option('-c, --pool [2]',
     'Concurrent Connections of Pool Size ',
      val => Math.max(1, val), 2)
   .option('--ping-interval [60000]',
     'Interval of ping to keep connection alive.',
      val => Math.max(500, val), 60000) // at least 500ms?
+  .option('-v, --family [4|6]',
+    'Force Resolver Internet Protocol Version priority',
+    parseInt, 0)
   .parse(process.argv);
 
 const defaultOptions = {
@@ -34,6 +33,11 @@ const defaultOptions = {
   gzip: true,
   agent: true, // a holder for proxy
 };
+
+const forwardUrl = 'https://dns.google.com:443/resolve';
+const url = require('url');
+const resolver = url.parse(forwardUrl);
+resolver.family = option.family;
 
 const agentPool = require('./pool')(resolver, option.pool);
 
@@ -64,6 +68,7 @@ const server = dnsd.createServer((req, res) => {
   // TODO unsupported due to dnsd's broken implementation.
   if (SupportTypes.indexOf(question.type) === -1) {
     console.timeEnd(timeStamp);
+    res.responseCode = 2;
     return res.end();
   }
 
@@ -133,6 +138,7 @@ const server = dnsd.createServer((req, res) => {
         return rec;
       });
     } else if (err) {
+      res.responseCode = 2;
       debug('request error', err);
     }
     res.end();
