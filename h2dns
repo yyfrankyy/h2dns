@@ -22,6 +22,9 @@ const option = require('commander')
   .option('-v, --family [4|6]',
     'Force Resolver Internet Protocol Version priority',
      val => parseInt(val), 0)
+   .option('-r, --retries [3]',
+     'The maximum amount of times to retry',
+      val => parseInt(val), 3)
   .parse(process.argv);
 
 const defaultOptions = {
@@ -38,14 +41,16 @@ resolver.family = option.family;
 
 const agentPool = require('./pool')(resolver, option.pool);
 
-const request = require('request').defaults(new Proxy(defaultOptions, {
-  get: (target, name) => {
-    if (name === 'agent') {
-      return agentPool.aquire();
+const retry = require('retry');
+const request = require('request')
+  .defaults(new Proxy(defaultOptions, {
+    get: (target, name) => {
+      if (name === 'agent') {
+        return agentPool.aquire();
+      }
+      return defaultOptions[name];
     }
-    return defaultOptions[name];
-  }
-}));
+  }));
 const Constants = require('./dnsd/constants');
 const ip6 = require('ip6');
 
@@ -93,56 +98,73 @@ const server = dnsd.createServer((req, res) => {
   if (subnet) {
     query.edns_client_subnet = subnet;
   }
-  const http2Req = request({
-    url: forwardUrl,
-    qs: query
-  }, (err, response, output) => {
-    if (!err) agentPool.release(http2Req.agent);
-    debug(timeStamp + ` +${new Date().getTime() - time}ms`);
-    if (output && output.Answer) {
-      res.recursion_available = output.RA;
-      res.recursion_desired = output.RD;
-      res.answer = output.Answer.map(rec => {
-        rec.ttl = rec.TTL;
-        rec.type = Constants.type_to_label(rec.type);
-        switch (rec.type) {
-          case 'MX':
-            rec.data = rec.data.split(/\s+/);
-            break;
-          case 'TXT':
-          case 'SPF':
-            rec.data = rec.data.slice(1, -1);
-            break;
-          case 'AAAA':
-            // dnsd is expecting long IPVersion 6 format
-            rec.data = ip6.normalize(rec.data);
-            break;
-          case 'SOA':
-            rec.data = arr2map(rec.data.split(/\s+/), [
-              'mname', 'rname', 'serial', 'refresh', 'retry', 'expire', 'ttl'
-            ]);
-            break;
-          case 'SRV':
-            rec.data = arr2map(rec.data.split(/\s+/), [
-              'priority', 'weight', 'port', 'target'
-            ]);
-            break;
-          case 'DS':
-            rec.data = arr2map(rec.data.split(/\s+/), [
-              'key_tag', 'algorithm', 'digest_type', 'digest'
-            ]);
-            break;
-        }
-        return rec;
-      });
-    } else if (err) {
-      res.responseCode = 2;
-      debug('request error', err);
-    }
-    res.end();
+
+  const operation = retry.operation({
+    retries: option.retries,
+    maxTimeout: option.timeout,
+    minTimeout: Math.min(option.timeout, 1000)
   });
-  http2Req.on('error', err => {
-    debug('request error', err);
+
+  operation.attempt(current => {
+    const http2Req = request({
+      url: forwardUrl,
+      qs: query
+    }, (err, response, output) => {
+      if (operation.retry(err)) {
+        debug(`retrying ${operation.attempts()}/${option.retries}`);
+        return;
+      }
+      if (err) {
+        debug(`give up retry after ${option.retries} attempts`);
+        err = operation.mainError();
+      }
+      if (!err) agentPool.release(http2Req.agent);
+      debug(timeStamp + ` +${new Date().getTime() - time}ms`);
+      if (output && output.Answer) {
+        res.recursion_available = output.RA;
+        res.recursion_desired = output.RD;
+        res.answer = output.Answer.map(rec => {
+          rec.ttl = rec.TTL;
+          rec.type = Constants.type_to_label(rec.type);
+          switch (rec.type) {
+            case 'MX':
+              rec.data = rec.data.split(/\s+/);
+              break;
+            case 'TXT':
+            case 'SPF':
+              rec.data = rec.data.slice(1, -1);
+              break;
+            case 'AAAA':
+              // dnsd is expecting long IPVersion 6 format
+              rec.data = ip6.normalize(rec.data);
+              break;
+            case 'SOA':
+              rec.data = arr2map(rec.data.split(/\s+/), [
+                'mname', 'rname', 'serial', 'refresh', 'retry', 'expire', 'ttl'
+              ]);
+              break;
+            case 'SRV':
+              rec.data = arr2map(rec.data.split(/\s+/), [
+                'priority', 'weight', 'port', 'target'
+              ]);
+              break;
+            case 'DS':
+              rec.data = arr2map(rec.data.split(/\s+/), [
+                'key_tag', 'algorithm', 'digest_type', 'digest'
+              ]);
+              break;
+          }
+          return rec;
+        });
+      } else if (err) {
+        res.responseCode = 2;
+        // debug('request error', err);
+      }
+      res.end();
+    });
+    http2Req.on('error', err => {
+      // debug('request error', err);
+    });
   });
 });
 
