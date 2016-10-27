@@ -11,21 +11,23 @@ const randomstring = require("randomstring");
 const option = require('commander')
   .version(require('./package.json').version)
   .option('-i, --edns-client-subnet [subnet]', 'EDNS Client Subnet')
-  .option('-p, --port [6666]', 'Port to bind', parseInt, 6666)
+  .option('-p, --port [6666]', 'Port to bind', val => parseInt(val), 6666)
   .option('-l, --listen [127.0.0.1]', 'Address to listen', '127.0.0.1')
   .option('-t, --timeout [5000]',
     'Default Http2 Request Timeout',
-     parseInt, 5000)
+     val => parseInt(val), 5000)
   .option('-c, --pool [2]',
     'Concurrent Connections of Pool Size ',
      val => Math.max(1, val), 2)
   .option('--ping-interval [60000]',
     'Interval of ping to keep connection alive.',
-     val => Math.max(500, val), 60000) // at least 500ms?
+     val => Math.max(500, parseInt(val)), 60000) // at least 500ms?
   .option('-v, --family [4|6]',
     'Force Resolver Internet Protocol Version priority',
-    parseInt, 0)
+    val => parseInt(val), 0)
   .parse(process.argv);
+
+console.log(option.timeout)
 
 const defaultOptions = {
   json: true,
