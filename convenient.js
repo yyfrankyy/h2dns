@@ -4,7 +4,7 @@
 
 require('defaultable')(module,
   { 'convenient'    : true
-  , 'ttl'           : 3600
+  , 'ttl'           : 0
   }, function(module, exports, DEFS, require) {
 
 function noop() {}
@@ -38,8 +38,6 @@ function final_response(res, value) {
     , answers   = res.answer       || []
     , authorities = res.authority  || []
     , additionals = res.additional || []
-
-  res.recursion_available = false
 
   // Find the zone of authority for this record, if any.
   var question = questions[0]
