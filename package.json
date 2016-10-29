@@ -1,6 +1,6 @@
 {
   "name": "h2dns",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "description": "A DNS Server over Google's HTTPS DNS API in HTTP/2 Protocol",
   "bin": "h2dns",
   "repository": {
