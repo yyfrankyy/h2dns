@@ -10,6 +10,8 @@ A DNS Server over Google's HTTPS DNS API in HTTP/2 Protocol.
 npm i h2dns -g
 ```
 
+Then start the party:
+
 ```
 $ h2dns -h
 
@@ -30,11 +32,11 @@ $ h2dns -h
 ### Tips
 
 Inspired by [gdns-go](https://github.com/ayanamist/gdns-go), but do less, I'd
-like to keep it as simple as possible.
+like to keep it as pure as possible.
 
 So,
 
 1. No cache. use it as a backend, [dnsmasq](http://www.thekelleys.org.uk/dnsmasq/doc.html)
- or [unbound](http://unbound.net/) as frontend.
+ or [unbound](http://unbound.net/) as frontend, or [fwdns](http://github.com/yyfrankyy/fwdns)
 2. No proxy. setup your proxy globally, the script will simply honor it.
 3. Less config. if your public ip is changed, restart the script.
