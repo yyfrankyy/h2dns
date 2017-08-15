@@ -7,6 +7,7 @@ if (process.env.NODE_ENV !== 'production'){
 const debug = require('debug')('h2dns:server');
 const dnsd = require('./dnsd/named');
 const randomstring = require("randomstring");
+const shuffle = require('shuffle-array');
 
 const option = require('commander')
   .version(require('./package.json').version)
@@ -120,6 +121,11 @@ const server = dnsd.createServer((req, res) => {
       if (!err) agentPool.release(http2Req.agent);
       debug(timeStamp + ` +${new Date().getTime() - time}ms`);
       if (output && output.Answer) {
+        // https://en.wikipedia.org/wiki/Round-robin_DNS
+        if (output.Answer.length > 1) {
+          shuffle(output.Answer);
+        }
+        
         res.recursion_available = output.RA;
         res.recursion_desired = output.RD;
         res.answer = output.Answer.map(rec => {
